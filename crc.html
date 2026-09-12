@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CRC Sentinel validates the integrity of synthetic laboratory reports across system-to-system transfers.">
+  <title>CRC Sentinel | Report integrity, verified</title>
+  <style>
+    :root {
+      --ink: #f4f8f7;
+      --muted: #a7b7ba;
+      --deep: #071719;
+      --panel: #0d2326;
+      --line: rgba(177, 218, 211, .17);
+      --mint: #8de8c6;
+      --mint-dark: #123e39;
+      --aqua: #60d5dd;
+      --coral: #ff9d83;
+      --max: 1160px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--deep);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, textarea { font: inherit; }
+    .container { width: min(var(--max), calc(100% - 48px)); margin: auto; }
+    .eyebrow {
+      margin: 0 0 16px;
+      color: var(--mint);
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .site-header {
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      width: 100%;
+      border-bottom: 1px solid rgba(177, 218, 211, .1);
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 82px;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 1.05rem; font-weight: 800; letter-spacing: -.02em; }
+    .brand-mark {
+      display: grid;
+      width: 35px;
+      height: 40px;
+      place-items: center;
+      color: var(--deep);
+      background: var(--mint);
+      clip-path: polygon(50% 0, 91% 14%, 84% 64%, 50% 100%, 16% 64%, 9% 14%);
+      font-size: .8rem;
+      font-weight: 900;
+    }
+    .nav-links { display: flex; align-items: center; gap: 30px; color: var(--muted); font-size: .87rem; }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-cta, .button-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--mint);
+      border-radius: 5px;
+      padding: 11px 17px;
+      color: var(--deep);
+      background: var(--mint);
+      font-weight: 800;
+      transition: transform .2s ease, filter .2s ease;
+    }
+    .nav-cta:hover, .button-primary:hover { filter: brightness(1.08); transform: translateY(-2px); }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 170px 0 112px;
+      background:
+        radial-gradient(circle at 77% 38%, rgba(46, 115, 111, .26), transparent 28%),
+        linear-gradient(112deg, #071719 36%, #0a292b 100%);
+    }
+    .hero::after {
+      position: absolute;
+      right: 4%;
+      bottom: -170px;
+      width: 530px;
+      height: 530px;
+      border: 1px solid rgba(141, 232, 198, .1);
+      border-radius: 50%;
+      box-shadow: 0 0 0 55px rgba(141, 232, 198, .025), 0 0 0 110px rgba(141, 232, 198, .02);
+      content: "";
+    }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 70px; align-items: center; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 670px; margin-bottom: 22px; font-size: clamp(2.8rem, 6vw, 5.35rem); line-height: .99; letter-spacing: -.065em; }
+    h1 em { color: var(--mint); font-style: normal; }
+    .hero-copy { max-width: 560px; color: var(--muted); font-size: 1.08rem; }
+    .hero-actions { display: flex; align-items: center; gap: 22px; margin-top: 34px; }
+    .text-link { color: var(--mint); font-size: .9rem; font-weight: 700; }
+    .text-link::after { margin-left: 7px; content: "↗"; }
+    .terminal {
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(7, 23, 25, .76);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .28);
+    }
+    .terminal-top { display: flex; align-items: center; gap: 7px; padding: 14px 17px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .72rem; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #487477; }
+    .dot.active { background: var(--mint); box-shadow: 0 0 11px var(--mint); }
+    .terminal-title { margin-left: 9px; }
+    .terminal-body { padding: 25px; }
+    .status { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; color: var(--mint); font-size: .8rem; font-weight: 800; }
+    .status-badge { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 50%; background: var(--mint-dark); }
+    .flow { display: grid; grid-template-columns: 1fr 34px 1fr; align-items: center; gap: 10px; }
+    .flow-card { padding: 16px; border: 1px solid var(--line); border-radius: 7px; background: rgba(20, 54, 56, .38); }
+    .flow-card small, .metric small { display: block; margin-bottom: 7px; color: var(--muted); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; }
+    .flow-card strong { font-size: .85rem; }
+    .flow-arrow { color: var(--mint); text-align: center; font-size: 1.3rem; }
+    .hash { overflow: hidden; margin-top: 17px; padding: 12px; border-radius: 5px; color: var(--aqua); background: #061315; font: .68rem/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; text-overflow: ellipsis; }
+    .trusted { padding: 24px 0; border-bottom: 1px solid var(--line); color: #789396; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+    .trusted-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .trusted-logos { display: flex; gap: 34px; color: #a7b8b9; font-size: .85rem; font-weight: 800; letter-spacing: .04em; }
+    .section { padding: 112px 0; }
+    .section-heading { max-width: 650px; }
+    h2 { margin-bottom: 16px; font-size: clamp(2rem, 4vw, 3.3rem); line-height: 1.05; letter-spacing: -.05em; }
+    .section-intro { color: var(--muted); font-size: 1rem; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 52px; }
+    .step { position: relative; padding: 27px; border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(140deg, rgba(20, 53, 55, .75), rgba(10, 29, 31, .5)); }
+    .step-number { color: var(--mint); font: 700 .76rem ui-monospace, monospace; }
+    .step h3 { margin: 45px 0 11px; font-size: 1.16rem; }
+    .step p, .capability p { margin: 0; color: var(--muted); font-size: .9rem; }
+    .capability-section { background: #091e20; }
+    .capabilities { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 50px; border: 1px solid var(--line); background: var(--line); }
+    .capability { min-height: 205px; padding: 27px; background: #091e20; }
+    .icon { display: grid; width: 34px; height: 34px; place-items: center; margin-bottom: 24px; border: 1px solid rgba(141,232,198,.38); border-radius: 6px; color: var(--mint); font-size: 1rem; }
+    .capability h3 { margin-bottom: 8px; font-size: 1rem; }
+    .validator { background: var(--deep); }
+    .validator-card { display: grid; grid-template-columns: .9fr 1.1fr; gap: 0; margin-top: 46px; border: 1px solid var(--line); border-radius: 9px; background: #0b2022; }
+    .validator-info { padding: 35px; border-right: 1px solid var(--line); }
+    .validator-info ul { display: grid; gap: 13px; margin: 27px 0 0; padding: 0; color: var(--muted); list-style: none; font-size: .87rem; }
+    .validator-info li::before { margin-right: 9px; color: var(--mint); content: "✓"; }
+    .validator-form { padding: 35px; }
+    .input-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 22px; }
+    .input-types label { cursor: pointer; }
+    .input-types input { position: absolute; opacity: 0; }
+    .input-types span { display: block; padding: 10px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); text-align: center; font-size: .78rem; font-weight: 700; }
+    .input-types input:checked + span { border-color: var(--mint); color: var(--deep); background: var(--mint); }
+    .input-field.hidden, .results-panel.hidden { display: none; }
+    .input-field { margin-bottom: 14px; }
+    .input-field textarea { min-height: 100px; }
+    .file-input { width: 100%; padding: 13px; border: 1px dashed var(--line); border-radius: 5px; color: var(--muted); background: #061517; }
+    .helper { margin: 8px 0 0; color: var(--muted); font-size: .72rem; }
+    .results-panel { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+    .result-heading { margin: 0 0 13px; color: var(--mint); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
+    .result-item { min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 4px; }
+    .result-item.full { grid-column: 1 / -1; }
+    .result-item dt { margin-bottom: 4px; color: var(--muted); font-size: .64rem; text-transform: uppercase; }
+    .result-item dd { overflow-wrap: anywhere; margin: 0; color: var(--ink); font: .71rem/1.45 ui-monospace, monospace; }
+    .result-item input { width: 100%; border: 0; outline: 0; color: var(--aqua); background: transparent; font: inherit; }
+    .receiver-check { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .receiver-check textarea { min-height: 82px; }
+    .receiver-button { width: 100%; margin-top: 10px; padding: 11px; border: 1px solid var(--aqua); border-radius: 4px; color: var(--aqua); background: transparent; cursor: pointer; font-size: .8rem; font-weight: 800; }
+    .receiver-button:hover { background: rgba(96, 213, 221, .1); }
+    .side-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 22px; }
+    .side-switch label, .receiver-modes label { cursor: pointer; }
+    .side-switch input, .receiver-modes input { position: absolute; opacity: 0; }
+    .side-switch span { display: block; padding: 12px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); text-align: center; font-size: .8rem; font-weight: 800; }
+    .side-switch input:checked + span { border-color: var(--mint); color: var(--deep); background: var(--mint); }
+    .receiver-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 22px; }
+    .receiver-modes span { display: block; padding: 10px 7px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); text-align: center; font-size: .73rem; font-weight: 700; }
+    .receiver-modes input:checked + span { border-color: var(--aqua); color: var(--deep); background: var(--aqua); }
+    .receiver-note { margin: -8px 0 16px; color: var(--muted); font-size: .72rem; }
+    .receiver-note { margin: -8px 0 16px; color: var(--muted); font-size: .72rem; }
+    .dashboard-panel.hidden { display: none; }
+    .receiver-results { margin-top: 22px; }
+    .form-label { display: block; margin-bottom: 10px; color: var(--muted); font-size: .77rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    textarea { width: 100%; min-height: 143px; padding: 14px; resize: vertical; border: 1px solid var(--line); border-radius: 5px; outline: 0; color: var(--ink); background: #061517; font: .83rem/1.6 ui-monospace, monospace; }
+    textarea:focus { border-color: var(--mint); }
+    .validate-button { width: 100%; margin-top: 13px; padding: 13px; border: 0; border-radius: 4px; color: var(--deep); background: var(--mint); cursor: pointer; font-weight: 800; }
+    .validation-result { display: none; margin-top: 15px; padding: 12px; border-radius: 4px; color: var(--mint); background: var(--mint-dark); font-size: .82rem; }
+    .validation-result.show { display: block; }
+    .cta { padding: 88px 0; border-top: 1px solid var(--line); background: radial-gradient(circle at 50% 100%, #123b3a, var(--deep) 58%); text-align: center; }
+    .cta h2 { max-width: 650px; margin: 0 auto 18px; }
+    .cta p { max-width: 540px; margin: 0 auto 27px; color: var(--muted); }
+    footer { padding: 24px 0; border-top: 1px solid var(--line); color: #71898b; font-size: .75rem; }
+    .footer-row { display: flex; justify-content: space-between; gap: 20px; }
+    @media (max-width: 800px) {
+      .hero-grid, .validator-card { grid-template-columns: 1fr; gap: 40px; }
+      .validator-info { border-right: 0; border-bottom: 1px solid var(--line); }
+      .steps, .capabilities { grid-template-columns: 1fr 1fr; }
+      .trusted-row { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 560px) {
+      .container { width: min(100% - 32px, var(--max)); }
+      .site-header { position: relative; background: var(--deep); }
+      .nav { height: 70px; }
+      .nav-links { display: none; }
+      .hero { padding: 77px 0 76px; }
+      .hero-grid { gap: 44px; }
+      .hero-actions { align-items: flex-start; flex-direction: column; gap: 17px; }
+      .steps, .capabilities { grid-template-columns: 1fr; }
+      .section { padding: 76px 0; }
+      .flow { grid-template-columns: 1fr; }
+      .flow-arrow { transform: rotate(90deg); }
+      .trusted-logos { flex-wrap: wrap; gap: 16px 24px; }
+      .validator-info, .validator-form { padding: 24px; }
+      .footer-row { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav container" aria-label="Primary navigation">
+      <a class="brand" href="#" aria-label="CRC Sentinel home"><span class="brand-mark">C</span> CRC Sentinel</a>
+      <div class="nav-links">
+        <a href="#how-it-works">How it works</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#validator">Validator</a>
+      </div>
+      <a class="nav-cta" href="#validator">Run a check</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <p class="eyebrow">Synthetic report integrity platform</p>
+          <h1>Know what arrived is what you <em>sent.</em></h1>
+          <p class="hero-copy">CRC Sentinel gives teams a clear, defensible way to validate synthetic laboratory reports across simulated system-to-system transfers.</p>
+          <div class="hero-actions">
+            <a class="button-primary" href="#validator">Validate a report</a>
+            <a class="text-link" href="#how-it-works">Explore the workflow</a>
+          </div>
+        </div>
+        <div class="terminal" aria-label="Example validation status">
+          <div class="terminal-top"><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="terminal-title">integrity-check / session-024</span></div>
+          <div class="terminal-body">
+            <div class="status"><span class="status-badge">✓</span> TRANSFER INTEGRITY CONFIRMED</div>
+            <div class="flow">
+              <div class="flow-card"><small>Source report</small><strong>lab-report-042.bin</strong></div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-card"><small>Destination</small><strong>received-copy.bin</strong></div>
+            </div>
+            <div class="hash">SHA-256&nbsp;&nbsp; 7f3b...9d21 &nbsp;·&nbsp; MATCH &nbsp;·&nbsp; 0 DISCREPANCIES</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="trusted">
+      <div class="container trusted-row"><span>Designed for reliable test environments</span><div class="trusted-logos"><span>SYNTHETIC DATA</span><span>SYSTEM QA</span><span>TRANSFER OPS</span></div></div>
+    </div>
+
+    <section class="section" id="how-it-works">
+      <div class="container">
+        <div class="section-heading"><p class="eyebrow">A controlled transfer, made visible</p><h2>Integrity checks without the guesswork.</h2><p class="section-intro">From source to destination, every stage of a simulated report transfer is accounted for and easy to understand.</p></div>
+        <div class="steps">
+          <article class="step"><span class="step-number">01 / INGEST</span><h3>Accept any report shape</h3><p>Use text, images, binary files, attachments, or mixed-content laboratory reports without reformatting.</p></article>
+          <article class="step"><span class="step-number">02 / TRANSFER</span><h3>Simulate the handoff</h3><p>Model the movement from one system or person to another in a safe, synthetic test workflow.</p></article>
+          <article class="step"><span class="step-number">03 / VERIFY</span><h3>Compare and report</h3><p>Surface missing, truncated, changed, or corrupted content with a concise health-check result.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section capability-section" id="capabilities">
+      <div class="container">
+        <div class="section-heading"><p class="eyebrow">Built for the details that matter</p><h2>One validation layer for every content type.</h2></div>
+        <div class="capabilities">
+          <article class="capability"><div class="icon">◇</div><h3>Format agnostic</h3><p>Validate structured, unstructured, and mixed-content reports from a single workflow.</p></article>
+          <article class="capability"><div class="icon">↔</div><h3>Transfer simulation</h3><p>Recreate source-to-destination movement without exposing real patient information.</p></article>
+          <article class="capability"><div class="icon">◎</div><h3>Discrepancy detection</h3><p>Identify data that is incomplete, truncated, modified, or no longer byte-for-byte consistent.</p></article>
+          <article class="capability"><div class="icon">✓</div><h3>Health-check reporting</h3><p>Give QA and operations teams a clear pass/fail signal and an actionable discrepancy trail.</p></article>
+          <article class="capability"><div class="icon">▣</div><h3>Mixed-content ready</h3><p>Keep text, images, binary payloads, and attachments in one integrity assessment.</p></article>
+          <article class="capability"><div class="icon">⌁</div><h3>Synthetic by design</h3><p>Built for repeatable testing, validation, and integration confidence in non-production scenarios.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section validator" id="validator">
+      <div class="container">
+        <div class="section-heading"><p class="eyebrow">Interactive proof point</p><h2>Run the sender and receiver check.</h2><p class="section-intro">This browser dashboard follows your CRC program: create a sender codeword, then validate it as a receiver using binary, text, or file mode.</p></div>
+        <div class="validator-card">
+          <div class="validator-info"><p class="eyebrow">CRC dashboard</p><h3>One workspace for both sides of the transfer.</h3><ul><li>Sender creates CRC1 and a complete codeword</li><li>Receiver checks remainder or compares CRC1 and CRC2</li><li>Binary, text, and local file workflows</li></ul></div>
+          <form class="validator-form" id="validatorForm">
+            <div class="side-switch" role="radiogroup" aria-label="CRC dashboard side">
+              <label><input type="radio" name="dashboardSide" value="sender" checked><span>01 / Sender</span></label>
+              <label><input type="radio" name="dashboardSide" value="receiver"><span>02 / Receiver</span></label>
+            </div>
+            <div class="dashboard-panel" id="senderPanel">
+              <div class="input-types" role="radiogroup" aria-label="Sender input type">
+                <label><input type="radio" name="senderType" value="1" checked><span>Binary</span></label>
+                <label><input type="radio" name="senderType" value="2"><span>Text</span></label>
+                <label><input type="radio" name="senderType" value="3"><span>File</span></label>
+              </div>
+              <div class="input-field" id="binaryField">
+                <label class="form-label" for="binaryInput">Dataword</label>
+                <textarea id="binaryInput" placeholder="Example: 1101011011" spellcheck="false"></textarea>
+                <p class="helper">Use only 0 and 1. The algorithm is selected from the dataword length.</p>
+              </div>
+              <div class="input-field hidden" id="textField">
+                <label class="form-label" for="textInput">Text payload</label>
+                <textarea id="textInput" placeholder="Enter synthetic report text..."></textarea>
+                <p class="helper">Text is converted to UTF-8 bytes before calculation.</p>
+              </div>
+              <div class="input-field hidden" id="fileField">
+                <label class="form-label" for="fileInput">Report file</label>
+                <input class="file-input" id="fileInput" type="file">
+                <p class="helper">The selected file is read locally in your browser.</p>
+              </div>
+              <button class="validate-button" type="submit">Calculate sender CRC</button>
+              <div class="validation-result" id="senderMessage" role="status"></div>
+            </div>
+            <div class="dashboard-panel hidden" id="receiverPanel">
+              <div class="receiver-modes" role="radiogroup" aria-label="Receiver input mode">
+                <label><input type="radio" name="receiverType" value="1" checked><span>Binary codeword</span></label>
+                <label><input type="radio" name="receiverType" value="2"><span>Received text</span></label>
+                <label><input type="radio" name="receiverType" value="3"><span>Received file</span></label>
+              </div>
+              <div class="input-field" id="receiverAlgorithmField">
+                <label class="form-label" for="receiverAlgorithm">Sender algorithm</label>
+                <select class="file-input" id="receiverAlgorithm">
+                  <option>CRC-3</option><option>CRC-4</option><option>CRC-8</option><option selected>CRC-32</option>
+                </select>
+              </div>
+              <div class="input-field" id="receivedCodewordField">
+                <label class="form-label" for="receivedCodewordInput">Received full codeword</label>
+                <p class="receiver-note">Paste the sender’s complete codeword once: dataword + CRC. Do not append CRC1 a second time.</p>
+                <textarea id="receivedCodewordInput" placeholder="Paste the complete dataword + CRC binary codeword..." spellcheck="false"></textarea>
+              </div>
+              <div class="input-field hidden" id="receivedTextField">
+                <label class="form-label" for="receivedTextInput">Received text</label>
+                <textarea id="receivedTextInput" placeholder="Paste the received text payload..."></textarea>
+              </div>
+              <div class="input-field hidden" id="receivedFileField">
+                <label class="form-label" for="receivedFileInput">Received file</label>
+                <input class="file-input" id="receivedFileInput" type="file">
+              </div>
+              <div class="input-field hidden" id="crc1Field">
+                <label class="form-label" for="crc1Input">CRC1 from sender</label>
+                <input class="file-input" id="crc1Input" placeholder="Example: 10111001">
+              </div>
+              <button class="receiver-button" type="button" id="receiverButton">Run receiver check</button>
+              <div class="validation-result" id="receiverMessage" role="status"></div>
+            </div>
+            <div class="results-panel hidden" id="senderResults">
+              <p class="result-heading">Sender results</p>
+              <dl class="result-grid">
+                <div class="result-item"><dt>Algorithm</dt><dd id="resultAlgorithm"></dd></div>
+                <div class="result-item"><dt>Generator</dt><dd id="resultGenerator"></dd></div>
+                <div class="result-item full"><dt>Dataword</dt><dd id="resultDataword"></dd></div>
+                <div class="result-item"><dt>CRC value</dt><dd id="resultCrc"></dd></div>
+                <div class="result-item full"><dt>Codeword</dt><dd><input id="resultCodeword" aria-label="Generated codeword"></dd></div>
+              </dl>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta"><div class="container"><p class="eyebrow">Confidence at every handoff</p><h2>Make report integrity part of your release checklist.</h2><p>Give your validation, QA, and integration teams a dependable signal before data moves into production workflows.</p><a class="button-primary" href="#validator">Start a synthetic check</a></div></section>
+  </main>
+
+  <footer><div class="container footer-row"><span>© 2026 CRC Sentinel</span><span>Synthetic validation for dependable transfers.</span></div></footer>
+  <script>
+    const crcAlgorithms = {
+      "CRC-3": "1011",
+      "CRC-4": "10011",
+      "CRC-8": "100000111",
+      "CRC-32": "100000100110000010001110110110111"
+    };
+    const senderFields = {
+      "1": document.getElementById("binaryField"),
+      "2": document.getElementById("textField"),
+      "3": document.getElementById("fileField")
+    };
+    const showMessage = (element, message, success) => {
+      element.classList.add("show");
+      element.style.color = success ? "var(--mint)" : "var(--coral)";
+      element.style.background = success ? "var(--mint-dark)" : "rgba(115, 48, 39, .45)";
+      element.textContent = message;
+    };
+    const validateBits = (value, name) => {
+      if (!value || /[^01]/.test(value)) throw new Error(name + " must contain only binary digits (0 or 1).");
+    };
+    const calculateRemainder = (codeword, generator) => {
+      validateBits(codeword, "Codeword");
+      if (codeword.length < generator.length) throw new Error("Codeword must be at least as long as the generator.");
+      const remainder = codeword.split("");
+      for (let index = 0; index < codeword.length - (generator.length - 1); index += 1) {
+        if (remainder[index] === "1") {
+          generator.split("").forEach((bit, offset) => {
+            remainder[index + offset] = String(Number(remainder[index + offset]) ^ Number(bit));
+          });
+        }
+      }
+      return remainder.slice(-(generator.length - 1)).join("");
+    };
+    const calculateCrc = (dataword, generator) => calculateRemainder(dataword + "0".repeat(generator.length - 1), generator);
+    const detectAlgorithm = (choice, dataword) => {
+      const name = choice === "2" || choice === "3" ? "CRC-32" : dataword.length <= 4 ? "CRC-3" : dataword.length <= 8 ? "CRC-4" : dataword.length <= 16 ? "CRC-8" : "CRC-32";
+      return [name, crcAlgorithms[name]];
+    };
+    const bytesToBinary = bytes => Array.from(bytes, byte => byte.toString(2).padStart(8, "0")).join("");
+
+    const readFileBits = async input => {
+      const file = input.files[0];
+      if (!file) throw new Error("Choose a file before continuing.");
+      return bytesToBinary(new Uint8Array(await file.arrayBuffer()));
+    };
+    const setInputFields = (fields, value) => Object.entries(fields).forEach(([name, field]) => field.classList.toggle("hidden", name !== value));
+    const syncReceiverFromSender = () => {
+      const algorithm = document.getElementById("resultAlgorithm").textContent;
+      const codeword = document.getElementById("resultCodeword").value;
+      if (algorithm) document.getElementById("receiverAlgorithm").value = algorithm;
+      if (codeword) document.getElementById("receivedCodewordInput").value = codeword;
+    };
+
+    document.querySelectorAll("input[name='senderType']").forEach(input => input.addEventListener("change", () => {
+      setInputFields(senderFields, input.value);
+    }));
+    document.querySelectorAll("input[name='dashboardSide']").forEach(input => input.addEventListener("change", () => {
+      document.getElementById("senderPanel").classList.toggle("hidden", input.value !== "sender");
+      document.getElementById("receiverPanel").classList.toggle("hidden", input.value !== "receiver");
+      if (input.value === "receiver") syncReceiverFromSender();
+    }));
+    document.querySelectorAll("input[name='receiverType']").forEach(input => input.addEventListener("change", () => {
+      const binary = input.value === "1";
+      const textOrFile = input.value === "2" || input.value === "3";
+      document.getElementById("receivedCodewordField").classList.toggle("hidden", !binary);
+      document.getElementById("receivedTextField").classList.toggle("hidden", binary || input.value === "3");
+      document.getElementById("receivedFileField").classList.toggle("hidden", binary || input.value !== "3");
+      document.getElementById("crc1Field").classList.toggle("hidden", binary);
+      document.getElementById("receiverAlgorithm").disabled = textOrFile;
+      if (textOrFile) document.getElementById("receiverAlgorithm").value = "CRC-32";
+    }));
+
+    document.getElementById("validatorForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const type = document.querySelector("input[name='senderType']:checked").value;
+      const result = document.getElementById("senderMessage");
+      try {
+        let dataword;
+        if (type === "1") {
+          dataword = document.getElementById("binaryInput").value.trim();
+          validateBits(dataword, "Data");
+        } else if (type === "2") {
+          dataword = bytesToBinary(new TextEncoder().encode(document.getElementById("textInput").value));
+          if (!dataword) throw new Error("Text input cannot be empty.");
+        } else {
+          dataword = await readFileBits(document.getElementById("fileInput"));
+        }
+        const [algorithm, generator] = detectAlgorithm(type, dataword);
+        const crc = calculateCrc(dataword, generator);
+        document.getElementById("resultAlgorithm").textContent = algorithm;
+        document.getElementById("resultGenerator").textContent = generator;
+        document.getElementById("resultDataword").textContent = dataword;
+        document.getElementById("resultCrc").textContent = crc;
+        document.getElementById("resultCodeword").value = dataword + crc;
+        document.getElementById("senderResults").classList.remove("hidden");
+        syncReceiverFromSender();
+        showMessage(result, "Sender complete — codeword generated successfully.", true);
+      } catch (error) {
+        document.getElementById("senderResults").classList.add("hidden");
+        showMessage(result, "Error — " + error.message, false);
+      }
+    });
+
+    document.getElementById("receiverButton").addEventListener("click", () => {
+      runReceiver().catch(error => showMessage(document.getElementById("receiverMessage"), "Error — " + error.message, false));
+    });
+
+    async function runReceiver() {
+      const type = document.querySelector("input[name='receiverType']:checked").value;
+      const algorithm = type === "1" ? document.getElementById("receiverAlgorithm").value : "CRC-32";
+      const generator = crcAlgorithms[algorithm];
+      let remainder;
+      let crc1 = "";
+      if (type === "1") {
+        const codeword = document.getElementById("receivedCodewordInput").value.trim();
+        remainder = calculateRemainder(codeword, generator);
+      } else {
+        let receivedBits;
+        if (type === "2") {
+          const text = document.getElementById("receivedTextInput").value;
+          if (!text) throw new Error("Received text cannot be empty.");
+          receivedBits = bytesToBinary(new TextEncoder().encode(text));
+        } else {
+          receivedBits = await readFileBits(document.getElementById("receivedFileInput"));
+        }
+        crc1 = document.getElementById("crc1Input").value.trim();
+        if (crc1.length !== generator.length - 1) {
+          throw new Error("CRC1 must contain exactly " + (generator.length - 1) + " binary digits for " + algorithm + ".");
+        }
+        const crc2 = calculateCrc(receivedBits, generator);
+        remainder = calculateRemainder(receivedBits + crc1, generator);
+        const accepted = crc1 === crc2 && /^0+$/.test(remainder);
+        showMessage(document.getElementById("receiverMessage"), (accepted ? "ACCEPT — " : "REJECT — ") + `CRC1 ${crc1} / CRC2 ${crc2} / remainder ${remainder}.`, accepted);
+        return;
+      }
+      const accepted = /^0+$/.test(remainder);
+      showMessage(document.getElementById("receiverMessage"), (accepted ? "ACCEPT — " : "REJECT — ") + `Remainder ${remainder}. ${accepted ? "Data is valid." : "Transmission error detected."}`, accepted);
+    }
+  </script>
+</body>
+</html>
